@@ -1,0 +1,239 @@
+{
+	"info": {
+		"_postman_id": "aa204d22-6b16-4660-b1a3-784952803c72",
+		"name": "mockservice",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "8012/bettersun/hello",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8012/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8012",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9999/bettersun/hello",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:9999/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9999",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8012/bettersun/hello",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8012/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8012",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9999/bettersun/hello",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:9999/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9999",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9527/bettersun/hello",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:9999/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9999",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8012/bettersun/hello",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8012/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8012",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9999/bettersun/hello",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:9999/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9999",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8012/bettersun/hello",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8012/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8012",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8012/bettersun/hello",
+			"request": {
+				"method": "VIEW",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8012/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8012",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9999/bettersun/hello",
+			"request": {
+				"method": "VIEW",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:9999/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9999",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
