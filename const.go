@@ -41,7 +41,7 @@ const contentTypeJSON = "application/json"
 const contentTypeJSONUTF8 = "application/json;charset=UTF-8"
 
 /// 日志文件
-const logFile = "mockservice.log"
+const logFile = "run.log"
 
 /// 日志
 const logFieldError = "错误信息"
