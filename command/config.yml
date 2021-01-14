@@ -4,7 +4,12 @@ port: 9999
 # 日志文件
 logFile: mock.log
 # 日志等级
-logLevel: -1
+# -1: DEBUG
+# 0: INFO
+# 1: WARN
+# 2: ERROR
+# 3: FATAL
+logLevel: 0
 # 主机文件
 hostFile: host.yml
 # 模拟服务信息文件
