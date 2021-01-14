@@ -15,143 +15,177 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// 全局变量：配置
+var config *Config
+
+// 全局变量：目标主机切片
+var hostSlice []string
+
+// 全局变量： 模拟服务信息切片
+var mockServiceInfoSlice []MockServiceInfo
+
+// 全局变量：HTTP服务
+var server http.Server
+
+// 全局变量：默认目标主机
+var defaultTargetHost string
+
+// 全局变量：默认目标主机
+var targetHostSlice []string
+
+// 全局变量：响应头Map
+var mapResponseHeader map[string]http.Header
+
+// 全局变量：模拟服务通用响应头
+var commonResponseHeader http.Header
+
 // 模拟服务(命令行调用)
 func MockServiceCommand() {
-
 	MockService()
-
 	log.Println(moist.CurrentDir())
 
 	// 命令行执行时，需要下面这段代码
-	// 从UI执行时，需要注释掉下面这段代码
 	ch := make(chan string)
 	<-ch
 }
 
 /// 模拟服务
-func MockService() error {
-
-	if isRunning {
-		log.Println("The Server is running")
-	}
-
-	// 监听
+func MockService() {
+	// 监听端口
 	port := ":" + config.Port
 	server = http.Server{
 		Addr: port,
 	}
 
-	// 注册
-	for url := range mapURIMockServiceInfo {
-		// 对未注册的URL进行注册
-		if !moist.IsInSlice(registedURI, url) {
-			http.HandleFunc(url, DoHandle)
-			registedURI = append(registedURI, url)
-		}
-	}
-
 	// TODO 需要确认端口是否被占用
-	go server.ListenAndServe()
-	isRunning = true
-	log.Printf("Listen and serve [%v]", config.Port)
+	go http.ListenAndServe(port, http.HandlerFunc(DoHandle))
 
-	logger.Info("服务运行中")
-	Notify("服务运行中")
-
-	return nil
+	msg := fmt.Sprintf("服务运行中... 端口[%v]", config.Port)
+	logger.Info(msg)
+	go Notify(msg)
 }
 
 /// 关闭服务
 func CloseServer() error {
-	isRunning = false
 	err := server.Close()
-	if err == nil {
-		log.Println("Server closed")
+	if err != nil {
+		msg := "关闭服务发生错误"
+		logger.Warn(msg)
 	}
 
-	logger.Info("服务已关闭")
-	Notify("服务已关闭")
+	msg := "服务已关闭"
+	logger.Info(msg)
+	go Notify(msg)
+
 	return err
 }
 
-/// 请求处理函数
+/// 响应函数
 func DoHandle(w http.ResponseWriter, r *http.Request) {
 
-	uri := r.URL.String()
-	logger.WithFields(logrus.Fields{logFieldURI: uri, logFieldHTTPMethod: r.Method}).Info()
+	url := r.URL.String()
+	// URL(有参数时，问号之前的部分)
+	bURL := baseURL(url)
 
-	message := fmt.Sprintf("URL[%v: %v]", r.Method, uri)
-	Notify(message)
+	msg := "请求URL"
+	logger.WithFields(logrus.Fields{logFieldURL: url, logFieldHTTPMethod: r.Method}).Info(msg)
+	msg = fmt.Sprintf("%v[%v: %v]", msg, r.Method, url)
+	go Notify(msg)
 
-	// 输出请求到文件
-	OutRequest(r)
+	// ======================================================================================
 
-	// URL对应的模拟服务信息
-	for url, v := range mapURIMockServiceInfo {
-		// 模拟服务信息切片
-		if url == r.URL.String() {
-			for _, vInfo := range v {
-				// 根据请求的URL和请求方法确定响应函数
-				if vInfo.URI == r.URL.String() && vInfo.Method == r.Method {
-					if vInfo.UseMockService {
-						doMockService(w, r, vInfo)
-						return
-					} else {
-						doProxyService(w, r, &vInfo)
-						return
-					}
+	isConfigedURL := false
+	// 存在模拟服务信息
+	for _, vInfo := range mockServiceInfoSlice {
+		// 根据请求的URL和请求方法确定响应函数
+		if vInfo.URL == bURL && vInfo.Method == r.Method {
+			isConfigedURL = true
+
+			// 使用模拟服务
+			if vInfo.UseMockService {
+				doMockService(w, r, vInfo, config)
+				return
+			}
+
+			// 不使用模拟服务
+			if !vInfo.UseMockService {
+				// 目标主机
+				var host string
+				if vInfo.UseDefaultTargetHost {
+					host = defaultTargetHost
+				} else {
+					host = vInfo.TargetHost
 				}
+
+				doProxyService(w, r, host)
+				return
 			}
 		}
 	}
 
-	msg := "目标主机无法访问或模拟服务信息未设置"
-	logger.WithFields(logrus.Fields{logFieldURI: uri, logFieldHTTPMethod: r.Method}).Info(msg)
-	Notify(msg)
+	// 请求的URL和请求方法对应的模拟服务信息
+	if !isConfigedURL {
+		var info MockServiceInfo
+		info.URL = bURL                     // URL(有参数时，问号之前的部分)
+		info.Method = r.Method              // 请求方法
+		info.TargetHost = defaultTargetHost // 目标主机: 默认目标主机
+		info.UseDefaultTargetHost = true    // 使用默认目标主机
+		info.UseMockService = false         // 不使用虚拟服务
+		info.StatusCode = http.StatusOK     // 默认返回200
+		info.ResponseFile = ""              // 响应文件默认为空
+		info.Description = bURL             // 说明默认使用URL(有参数时，问号之前的部分)
 
-	log.Println(msg)
+		// 添加到模拟服务信息切片
+		mockServiceInfoSlice = append(mockServiceInfoSlice, info)
+
+		msg = "模拟服务信息未配置，使用默认目标主机"
+		logger.Info(msg)
+		go Notify(msg)
+
+		// 响应
+		doProxyService(w, r, defaultTargetHost)
+
+		// 保存响应信息
+		SaveMockServiceInfo()
+
+		// 向Flutter发送消息触发Flutter事件
+		go NotifyAddMockServiceInfo(info)
+	}
 }
 
 /// 转发请求
 // 参考：https://www.cnblogs.com/boxker/p/11046342.html
-func doProxyService(w http.ResponseWriter, r *http.Request, info *MockServiceInfo) {
+func doProxyService(w http.ResponseWriter, r *http.Request, host string) {
+	go Notify("访问目标主机")
 
-	// 通知Flutter
-	Notify("访问目标主机")
-
-	uri := r.URL.String()
+	url := r.URL.String()
 	// 创建一个HttpClient用于转发请求
 	cli := &http.Client{}
 
 	// 读取请求的Body
+	// 读取后 r.Body 即关闭，无法再次读取
+	// 若需要再次读取，需要用读取到的内容再次构建Reader
 	body, err := ioutil.ReadAll(r.Body)
-
 	if err != nil {
-		fmt.Print("ioutil.ReadAll(r.Body) ", err.Error())
+		msg := "读取请求体发生错误"
+		logger.WithFields(logrus.Fields{logFieldURL: url, logFieldHTTPMethod: r.Method}).Info(msg)
 	}
 
-	var host string
-	if info.UseDefaultTargetHost {
-		host = defaultTargetHost
-	} else {
-		host = info.TargetHost
-	}
+	// 日志
+	logger.WithFields(logrus.Fields{logFieldHost: host}).Info("访问目标主机")
 
 	// 转发的URL
-	reqURL := host + uri
+	reqURL := host + url
 
-	logger.WithFields(logrus.Fields{
-		logFieldHost: host, logFieldURI: uri,
-		logFieldHTTPMethod:    r.Method,
-		logFieldRequestHeader: r.Header,
-		// logFieldRequestBody:   string(body),	// 请求体不输出到日志，可参考保存的请求体文件
-	},
-	).Info("访问目标主机")
+	// 输出请求头
+	OutRequest(url, r.Method, r.Header, string(body))
 
 	// 创建转发用的请求
 	reqProxy, err := http.NewRequest(r.Method, reqURL, strings.NewReader(string(body)))
 	if err != nil {
-		log.Print("http.NewRequest ", err.Error())
+		msg := "创建转发请求发生错误"
+		logger.WithFields(logrus.Fields{logFieldHost: host, logFieldURL: url, logFieldHTTPMethod: r.Method}).Info(msg)
+		// log.Println(fmt.Sprintf("%v %v", msg, err))
 		return
 	}
 
@@ -172,16 +206,19 @@ func doProxyService(w http.ResponseWriter, r *http.Request, info *MockServiceInf
 	for k, v := range responseProxy.Header {
 		w.Header().Set(k, v[0])
 	}
-	// log.Println(responseProxy.Header)
 
-	// 输出响应头
-	k := fmt.Sprintf("%v_%v", uri, r.Method)
+	// 响应头键
+	k := keyResponseHeader(url, r.Method)
 	_, ok := mapResponseHeader[k]
+	// 响应头Map中不存在，则添加到响应头Map中
 	if !ok {
 		mapResponseHeader[k] = responseProxy.Header
 	}
-	OutResponseHeader(ResponseHeaderFile, mapResponseHeader)
+	// 输出响应头(每次都输出用于保存最新的响应头)
+	OutResponseHeader(mapResponseHeader)
 
+	// 响应为JSON判断
+	isResponseJSON := isResponseJSON(responseProxy.Header)
 	// gzip压缩判断
 	isGzipped := isGzipped(responseProxy.Header)
 
@@ -223,8 +260,7 @@ func doProxyService(w http.ResponseWriter, r *http.Request, info *MockServiceInf
 	}
 
 	// 输出响应体到文件
-	OutResponseBody(r.Method, uri, dataOutput)
-	// log.Println(string(dataOutput))
+	OutResponseBody(r.Method, url, isResponseJSON, dataOutput)
 
 	// response的Body不能多次读取，需要重新生成可读取的Body
 	resProxyBody := ioutil.NopCloser(bytes.NewBuffer(data))
@@ -234,6 +270,177 @@ func doProxyService(w http.ResponseWriter, r *http.Request, info *MockServiceInf
 	w.WriteHeader(responseProxy.StatusCode)
 	// 复制转发的响应Body到响应Body
 	io.Copy(w, resProxyBody)
+}
+
+/// 模拟服务
+func doMockService(w http.ResponseWriter, r *http.Request, info MockServiceInfo, config *Config) {
+	msg := "使用模拟服务"
+	logger.WithFields(logrus.Fields{logFieldMockResponseFile: info.ResponseFile}).Info(msg)
+	msg = fmt.Sprintf("%v %v[%v]", msg, logFieldMockResponseFile, info.ResponseFile)
+	go Notify(msg)
+
+	url := r.URL.String()
+
+	// 读取请求的Body
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "读取请求体发生错误"
+		logger.WithFields(logrus.Fields{logFieldURL: url, logFieldHTTPMethod: r.Method}).Info(msg)
+		log.Println(fmt.Sprintf("%v %v", msg, err))
+	}
+	// 输出请求信息
+	OutRequest(url, r.Method, r.Header, string(body))
+
+	// =====================================================================
+	var header http.Header
+
+	// 响应头: URL_Method
+	k := keyResponseHeader(url, r.Method)
+	// 获取URL对应的响应头
+	header, ok := mapResponseHeader[k]
+
+	// 无法获取URL对应的响应头，且不使用模拟服务通用响应头时
+	if !ok && !config.UseMockCommonResponseHeader {
+		msg := "无法获取URL对应的响应头信息,可先访问目标主机以保存相关信息或使用模拟服务通用响应头"
+		logger.WithFields(logrus.Fields{logFieldURL: url, logFieldHTTPMethod: r.Method}).Warn(msg)
+
+		// 通知Flutter
+		msg = fmt.Sprintf("%v[%v]", msg, k)
+		go Notify(msg)
+
+		m := make(map[string]interface{}, 0)
+		m["message"] = msg
+
+		msgStream, err := json.Marshal(m)
+		if err != nil {
+			log.Println(err)
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(msgStream)
+		return
+	}
+	// 无法获取URL对应的响应头，且使用模拟服务通用响应头时
+	if !ok && config.UseMockCommonResponseHeader {
+		// 模拟服务通用响应头
+		header = commonResponseHeader
+
+		msg := "URL的响应头信息不存在，使用模拟服务通用响应头"
+		logger.Warn(msg)
+		go Notify(msg)
+	}
+	// 能够获取URL对应的响应头
+	if ok {
+		// 仅输出日志
+		msg := "使用已保存的响应头信息"
+		logger.Info(msg)
+		go Notify(msg)
+	}
+
+	// 调试模式输出
+	logger.WithFields(logrus.Fields{"响应头信息": header}).Debug()
+
+	// 响应是否为JSON
+	isResponseJSON := false
+	// 响应是否gzip压缩
+	isGzipped := false
+	for k, v := range header {
+		// Content-Length 不添加到响应头
+		// http.ResponseWriter会自动计算
+		if k == httpHeaderContentLength {
+			continue
+		}
+
+		w.Header().Set(k, v[0])
+
+		// 响应是否为JSON
+		if k == httpHeaderContentType && moist.Contains(v, contentTypeJSON) {
+			isResponseJSON = true
+		}
+
+		// 响应是否Gzip压缩
+		if k == httpHeaderContentEncoding && moist.Contains(v, encodingGzip) {
+			isGzipped = true
+		}
+	}
+
+	// ==============================================================================================
+
+	// 响应文件
+	responseFile := info.ResponseFile
+
+	// 响应文件不存在
+	if !moist.IsExist(responseFile) {
+		msg := "模拟服务响应文件不存在"
+		logger.WithFields(logrus.Fields{logFieldFile: responseFile}).Warn(msg)
+
+		// 通知Flutter
+		msg = fmt.Sprintf("%v[%v]", msg, responseFile)
+		go Notify(msg)
+
+		m := make(map[string]interface{}, 0)
+		m["message"] = msg
+
+		msgStream, err := json.Marshal(m)
+		if err != nil {
+			log.Println(err)
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(msgStream)
+		return
+	}
+
+	// 响应体
+	var stream []byte
+	if isResponseJSON {
+		// 响应文件转换成Map
+		data, err := moist.JsonFileToMap(responseFile)
+		if err != nil {
+			log.Println(err)
+		}
+
+		// 转换成字节
+		stream, err = json.Marshal(data)
+		if err != nil {
+			log.Println(err)
+		}
+	} else {
+		// 响应体非JSON
+		data, err := ioutil.ReadFile(responseFile)
+		if err != nil {
+			log.Println(err)
+		}
+
+		stream = data
+	}
+
+	// 调试模式输出
+	logger.WithFields(logrus.Fields{
+		logFieldURL:            url,
+		logFieldHTTPMethod:     r.Method,
+		logFieldResponseHeader: w.Header(),
+		"模拟服务响应文件":             responseFile,
+		"模拟服务响应体":              string(stream),
+	}).Debug()
+
+	// 响应状态码，必须放在w.Header().Set(k, v)之后
+	if info.StatusCode == 0 {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(info.StatusCode)
+	}
+
+	// 响应
+	if isGzipped {
+		// gzip压缩
+		buffer := new(bytes.Buffer)
+		gw := gzip.NewWriter(buffer)
+		gw.Write(stream)
+		gw.Flush()
+
+		w.Write(buffer.Bytes())
+	} else {
+		w.Write(stream)
+	}
 }
 
 /// gzip压缩判断
@@ -268,158 +475,11 @@ func isResponseJSON(header http.Header) bool {
 	return result
 }
 
-/// 模拟服务
-func doMockService(w http.ResponseWriter, r *http.Request, info MockServiceInfo) {
-
-	// 通知Flutter
-	Notify("使用模拟服务")
-
-	uri := r.URL.String()
-
-	// 响应头: URI_Method
-	k := fmt.Sprintf("%v_%v", uri, r.Method)
-	// 获取URI对应的响应头
-	header, ok := mapResponseHeader[k]
-	// 无法获取URI对应的响应头时
-	if !ok {
-		msg := "无法获取URI对应的响应头信息,可先访问目标主机以保存相关信息"
-		logger.WithFields(logrus.Fields{
-			logFieldURI:        uri,
-			logFieldHTTPMethod: r.Method,
-		}).Warn(msg)
-
-		// 通知Flutter
-		msg = fmt.Sprintf("%v[%v]", msg, k)
-		Notify(msg)
-	}
-
-	// 调试模式输出
-	logger.WithFields(logrus.Fields{
-		logFieldURI:        uri,
-		logFieldHTTPMethod: r.Method,
-		"响应头信息":            header,
-	}).Debug()
-
-	// 响应是否为JSON
-	isResponseJSON := false
-	// 响应是否gzip压缩
-	isGzipped := false
-	if ok {
-		for k, v := range header {
-			// Content-Length 不添加到响应头
-			// http.ResponseWriter会自动计算
-			if k == httpHeaderContentLength {
-				continue
-			}
-
-			w.Header().Set(k, v[0])
-
-			// 响应是否为JSON
-			if k == httpHeaderContentType && moist.Contains(v, contentTypeJSON) {
-				isResponseJSON = true
-			}
-
-			// 响应是否Gzip压缩
-			if k == httpHeaderContentEncoding && moist.Contains(v, encodingGzip) {
-				isGzipped = true
-			}
-		}
-	}
-
-	// 调试模式输出
-	logger.WithFields(logrus.Fields{
-		logFieldURI:        uri,
-		logFieldHTTPMethod: r.Method,
-		"响应体JSON":          isResponseJSON,
-	}).Debug()
-
-	// ==============================================================================================
-
-	// 响应文件
-	responseFile := moist.CurrentDir() + info.ResponseFile
-
-	// 响应文件不存在
-	if !moist.IsExist(responseFile) {
-		msg := "模拟服务响应文件不存在"
-		logger.WithFields(logrus.Fields{logFieldFile: responseFile}).Warn(msg)
-
-		// 通知Flutter
-		msg = fmt.Sprintf("%v[%v]", msg, responseFile)
-		Notify(msg)
-
-		m := make(map[string]interface{}, 0)
-		m["message"] = msg
-
-		msgStream, err := json.Marshal(m)
-		if err != nil {
-			log.Println(err)
-		}
-		w.Write(msgStream)
-		return
-	}
-
-	// // 通知Flutter
-	// message := fmt.Sprintf("模拟服务响应文件[%v]", responseFile)
-	// Notify(message)
-
-	// 响应体
-	var stream []byte
-	if isResponseJSON {
-		// 响应文件转换成Map
-		data, err := moist.JsonFileToMap(responseFile)
-		if err != nil {
-			log.Println(err)
-		}
-
-		// 转换成字节
-		stream, err = json.Marshal(data)
-		if err != nil {
-			log.Println(err)
-		}
-
-	} else {
-		data, err := ioutil.ReadFile(responseFile)
-		if err != nil {
-			log.Println(err)
-		}
-
-		stream = data
-	}
-	// log.Println(string(stream))
-
-	// 调试模式输出
-	logger.WithFields(logrus.Fields{
-		logFieldURI:        uri,
-		logFieldHTTPMethod: r.Method,
-		"模拟服务响应文件":         responseFile,
-		"模拟服务响应体":          string(stream),
-	}).Debug()
-
-	// 响应状态码，必须放在w.Header().Set(k, v)之后
-	if info.StatusCode == 0 {
-		w.WriteHeader(200)
-	} else {
-		w.WriteHeader(info.StatusCode)
-	}
-
-	// 响应
-	if isGzipped {
-		// gzip压缩
-		buffer := new(bytes.Buffer)
-		gw := gzip.NewWriter(buffer)
-		gw.Write(stream)
-		gw.Flush()
-
-		w.Write(buffer.Bytes())
-	} else {
-		w.Write(stream)
-	}
-
-}
-
-/// 是否运行中
-func IsRunning() bool {
-	return isRunning
+// 响应头的键值
+func keyResponseHeader(url string, method string) string {
+	// URL(有参数时，问号之前的部分)
+	bURL := baseURL(url)
+	return fmt.Sprintf("%v_%v", bURL, method)
 }
 
 /// 获取目标主机列表
@@ -437,24 +497,8 @@ func UpdateMockServiceInfo(info MockServiceInfo) {
 
 	// 更新内存中的模拟服务信息
 	for i, v := range mockServiceInfoSlice {
-		if v.URI == info.URI && v.Method == info.Method {
+		if v.URL == info.URL && v.Method == info.Method {
 			mockServiceInfoSlice[i] = info
-		}
-	}
-
-	// 更新内存中的 URL对应模拟服务信息Map
-	for url, v := range mapURIMockServiceInfo {
-		if url == info.URI {
-			var infoSlice []MockServiceInfo
-			for _, vInfo := range v {
-				// 只更新对应方法
-				if info.Method == vInfo.Method {
-					infoSlice = append(infoSlice, info)
-				} else {
-					infoSlice = append(infoSlice, vInfo)
-				}
-			}
-			mapURIMockServiceInfo[url] = infoSlice
 		}
 	}
 }
@@ -465,31 +509,8 @@ func UpdateAllMockServiceInfo(newInfoSlice []MockServiceInfo) {
 	// 更新内存中的模拟服务信息
 	for i, v := range mockServiceInfoSlice {
 		for _, v2 := range newInfoSlice {
-			if v.URI == v2.URI && v.Method == v2.Method {
+			if v.URL == v2.URL && v.Method == v2.Method {
 				mockServiceInfoSlice[i] = v2
-				break
-			}
-		}
-	}
-
-	// 更新内存中的 URL对应模拟服务信息Map
-	for url, v := range mapURIMockServiceInfo {
-
-		// 新的模拟服务信息
-		for _, vNew := range newInfoSlice {
-
-			// URL对应模拟服务信息Map 的键 对应 新的模拟服务信息的URI
-			if url == vNew.URI {
-				var infoSlice []MockServiceInfo
-
-				// URL对应模拟服务信息Map 的 值
-				for _, vInfo := range v {
-					if vNew.Method == vInfo.Method {
-						infoSlice = append(infoSlice, vNew)
-					}
-				}
-
-				mapURIMockServiceInfo[url] = infoSlice
 				break
 			}
 		}
@@ -498,14 +519,16 @@ func UpdateAllMockServiceInfo(newInfoSlice []MockServiceInfo) {
 
 // 保存模拟服务信息
 func SaveMockServiceInfo() error {
-
-	err := OutputMockServiceInfo(InfoFile, mockServiceInfoSlice)
+	// 保存模拟服务信息
+	err := OutputMockServiceInfo(*config, mockServiceInfoSlice)
 	if err != nil {
 		log.Println(err)
+		logger.WithFields(logrus.Fields{
+			logFieldFile: config.InfoFile,
+		}).Warn("模拟服务信息保存失败")
 	}
-
 	logger.WithFields(logrus.Fields{
-		logFieldFile: InfoFile,
+		logFieldFile: config.InfoFile,
 	}).Info("模拟服务信息已保存")
 
 	return err
@@ -513,6 +536,16 @@ func SaveMockServiceInfo() error {
 
 // 保存主机列表
 func SaveHost() error {
-	err := OutputHost(HostFile, hostSlice)
+	err := OutputHost(*config, hostSlice)
+	if err != nil {
+		log.Println(err)
+		logger.WithFields(logrus.Fields{
+			logFieldFile: config.InfoFile,
+		}).Warn("主机列表保存失败")
+	}
+	logger.WithFields(logrus.Fields{
+		logFieldFile: config.InfoFile,
+	}).Info("主机列表已保存")
+
 	return err
 }

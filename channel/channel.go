@@ -15,11 +15,9 @@ import (
 const (
 	channelName = "bettersun.go-flutter.plugin.mockservice"
 
-	funcNameHelo      = "hello"
-	funcNameRun       = "run"
-	funcNameClose     = "close"
-	funcNameLoad      = "load"
-	funcNameIsRunning = "IsRunning"
+	funcNameRun   = "run"
+	funcNameClose = "close"
+	funcNameLoad  = "load"
 
 	funcNameUpdateInfo    = "updateInfo"
 	funcNameUpdateAllInfo = "updateAllInfo"
@@ -42,11 +40,9 @@ var _ flutter.Plugin = &MockServicePlugin{}
 func (MockServicePlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
 	ch := plugin.NewMethodChannel(messenger, channelName, plugin.StandardMethodCodec{})
 
-	ch.HandleFunc(funcNameHelo, helloFunc)
 	ch.HandleFunc(funcNameRun, runFunc)
 	ch.HandleFunc(funcNameClose, closeFunc)
 	ch.HandleFunc(funcNameLoad, loadFunc)
-	ch.HandleFunc(funcNameIsRunning, isRunningFunc)
 
 	ch.HandleFunc(funcNameUpdateInfo, updateInfoFunc)
 	ch.HandleFunc(funcNameUpdateAllInfo, updateAllInfoFunc)
@@ -62,24 +58,12 @@ func (MockServicePlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
 	return nil
 }
 
-/// Hello
-func helloFunc(arguments interface{}) (reply interface{}, err error) {
-	log.Println("helloFunc()")
-	return "message from mockservice", nil
-}
-
 /// 启动服务
 func runFunc(arguments interface{}) (reply interface{}, err error) {
 	log.Println("runFunc()")
 	mockservice.MockService()
-	return "running", nil
-}
 
-/// 运行中
-func isRunningFunc(arguments interface{}) (reply interface{}, err error) {
-	log.Println("isRunningFunc()")
-	isRunning := mockservice.IsRunning()
-	return isRunning, nil
+	return "start", nil
 }
 
 /// 关闭服务
@@ -89,6 +73,7 @@ func closeFunc(arguments interface{}) (reply interface{}, err error) {
 	if err != nil {
 		return false, nil
 	}
+
 	return true, nil
 }
 
@@ -121,9 +106,9 @@ func updateInfoFunc(arguments interface{}) (reply interface{}, err error) {
 	if !ok {
 		log.Println("ERROR: [targetHost]")
 	}
-	uri, ok := m["uri"].(string)
+	url, ok := m["url"].(string)
 	if !ok {
-		log.Println("ERROR: [uri]")
+		log.Println("ERROR: [url]")
 	}
 	method, ok := m["method"].(string)
 	if !ok {
@@ -148,7 +133,7 @@ func updateInfoFunc(arguments interface{}) (reply interface{}, err error) {
 	info.UseDefaultTargetHost = useDefaultTargetHost
 	info.UseMockService = useMockService
 	info.TargetHost = targetHost
-	info.URI = uri
+	info.URL = url
 	info.Method = method
 	info.StatusCode = int(statusCode)
 	info.ResponseFile = responseFile
@@ -183,9 +168,9 @@ func updateAllInfoFunc(arguments interface{}) (reply interface{}, err error) {
 		if !ok {
 			log.Println("ERROR: [targetHost]")
 		}
-		uri, ok := vm["uri"].(string)
+		url, ok := vm["url"].(string)
 		if !ok {
-			log.Println("ERROR: [uri]")
+			log.Println("ERROR: [url]")
 		}
 		method, ok := vm["method"].(string)
 		if !ok {
@@ -210,7 +195,7 @@ func updateAllInfoFunc(arguments interface{}) (reply interface{}, err error) {
 		info.UseDefaultTargetHost = useDefaultTargetHost
 		info.UseMockService = useMockService
 		info.TargetHost = targetHost
-		info.URI = uri
+		info.URL = url
 		info.Method = method
 		info.StatusCode = int(statusCode)
 		info.ResponseFile = responseFile
@@ -280,9 +265,9 @@ func responseListFunc(arguments interface{}) (reply interface{}, err error) {
 
 	// 参数
 	m := arguments.(map[interface{}]interface{})
-	uri, ok := m["uri"].(string)
+	url, ok := m["url"].(string)
 	if !ok {
-		log.Println("ERROR: [uri]")
+		log.Println("ERROR: [url]")
 	}
 	method, ok := m["method"].(string)
 	if !ok {
@@ -290,7 +275,7 @@ func responseListFunc(arguments interface{}) (reply interface{}, err error) {
 	}
 
 	var slice []interface{}
-	list, err := mockservice.LoadResponseFile(uri, method)
+	list, err := mockservice.LoadResponseFile(url, method)
 	if err != nil {
 		log.Println(err)
 		return slice, err

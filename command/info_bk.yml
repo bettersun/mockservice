@@ -4,7 +4,7 @@
   useDefaultTargetHost: true
   useMockService: false
   statusCode: 200
-  responseFile: /json/home.json
+  responseFile: json/home.json
   description: 主页
 - uri: /hello
   method: GET
@@ -12,7 +12,7 @@
   useDefaultTargetHost: true
   useMockService: true
   statusCode: 200
-  responseFile: /json/hello.json
+  responseFile: json/hello.json
   description: 你好_GET
 - uri: /hello
   method: POST
@@ -20,7 +20,7 @@
   useDefaultTargetHost: true
   useMockService: false
   statusCode: 200
-  responseFile: /json/hello.json
+  responseFile: json/hello.json
   description: 你好_POST
 - uri: /hello
   method: PUT
@@ -28,7 +28,7 @@
   useDefaultTargetHost: false
   useMockService: true
   statusCode: 200
-  responseFile: /json/hello.json
+  responseFile: json/hello.json
   description: 你好_PUT
 - uri: /hello
   method: DELETE
@@ -36,7 +36,7 @@
   useDefaultTargetHost: true
   useMockService: true
   statusCode: 200
-  responseFile: /json/hello.json
+  responseFile: json/hello.json
   description: 你好_DELETE
 - uri: /bettersun
   method: GET
@@ -44,7 +44,7 @@
   useDefaultTargetHost: false
   useMockService: true
   statusCode: 401
-  responseFile: /json/bettersun.json
+  responseFile: json/bettersun.json
   description: 任何一种技艺达到完美 都会令人无法抗拒
 - uri: /bettersun/hello
   method: GET
@@ -52,7 +52,7 @@
   useDefaultTargetHost: true
   useMockService: false
   statusCode: 200
-  responseFile: /response/bettersun_hello/GET/body_GET_yyy.json
+  responseFile: response/bettersun_hello/GET/body_GET_yyy.json
   description: hello_GET
 - uri: /bettersun/hello
   method: POST
@@ -60,7 +60,7 @@
   useDefaultTargetHost: false
   useMockService: true
   statusCode: 404
-  responseFile: /json/hello.json
+  responseFile: json/hello.json
   description: hello_POST
 - uri: /bettersun/hello
   method: PUT
@@ -68,7 +68,7 @@
   useDefaultTargetHost: true
   useMockService: true
   statusCode: 200
-  responseFile: /json/hello_none.json
+  responseFile: json/hello_none.json
   description: hello_PUT
 - uri: /bettersun/hello
   method: DELETE
@@ -76,5 +76,5 @@
   useDefaultTargetHost: true
   useMockService: false
   statusCode: 200
-  responseFile: /json/hello.json
+  responseFile: json/hello.json
   description: hello_DETELE

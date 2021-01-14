@@ -15,7 +15,9 @@
 # vendor/
 fakeserver/fakeserver
 command/command
+command/backup/*
 command/request/*
 command/response/*
 command/response_header.yml
 command/*.log
+command/response_header/response_header.json

@@ -1,1 +1,13 @@
+# 此文件内容修改后需重启
+# 端口
 port: 9999
+# 日志文件
+logFile: mock.log
+# 日志等级
+logLevel: -1
+# 主机文件
+hostFile: host.yml
+# 模拟服务信息文件
+infoFile: info.yml
+# 使用模拟服务通用响应头
+useMockCommonResponseHeader: true

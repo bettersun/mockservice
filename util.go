@@ -10,126 +10,180 @@ import (
 
 	"github.com/bettersun/moist"
 	yml "github.com/bettersun/moist/yaml"
+	"github.com/sirupsen/logrus"
 )
 
-/// 请求文件路径
-func pathRequest() string {
-	pathRequest := fmt.Sprintf("%v%v", moist.CurrentDir(), requestPath)
-	return pathRequest
+/// 获取URL里的地址部分
+///  去掉URL里?后面的内容
+func baseURL(s string) string {
+	tmp := ""
+
+	// 第一个问号的位置
+	qIndex := strings.Index(s, "?")
+
+	if qIndex > 0 {
+		tmp = s[0:qIndex]
+	} else {
+		tmp = s
+	}
+
+	return tmp
 }
 
 /// 反斜线转下划线
-/// 用于 URI对应的目录
-func EscapseSlash(s string) string {
+/// 去掉第一个下划线
+func escapseURL(s string) string {
+	// 去掉问号后面的部分
+	s = baseURL(s)
+
+	// 反斜线转下划线，去掉第一个下划线
 	result := strings.Replace(strings.ReplaceAll(s, "/", "_"), "_", "", 1)
 	return result
 }
 
-/// URL对应的响应文件路径
-func pathURLResponse(uri string, method string) string {
-	// 输出子目录
-	pURI := EscapseSlash(uri)
-
-	//递归创建目录
-	p := fmt.Sprintf("%v/%v/%v", responsePath, pURI, method)
+/// 请求信息文件存放目录(相对)
+func pathURLRequest(url string, method string) string {
+	pURL := escapseURL(url)
+	p := fmt.Sprintf("%v/%v_%v", pathRequest, pURL, method)
 
 	return p
 }
 
-/// URL对应的响应文件路径
-func fullPathURLResponse(uri string, method string) string {
-
-	//递归创建目录
-	p := fmt.Sprintf("%v%v", moist.CurrentDir(), pathURLResponse(uri, method))
+/// 响应信息文件存放目录(相对)
+func pathURLResponse(url string, method string) string {
+	pURL := escapseURL(url)
+	p := fmt.Sprintf("%v/%v_%v", pathResponse, pURL, method)
 
 	return p
+}
+
+/// 请求信息文件名
+func fileRequest() string {
+	f := fmt.Sprintf("req_%v.json", moist.NowMdHms())
+	return f
+}
+
+/// 响应信息文件名
+func fileResponse(isJSON bool) string {
+	var f string
+
+	if isJSON {
+		f = fmt.Sprintf("body_%v.json", moist.NowMdHms())
+	} else {
+		f = fmt.Sprintf("body_%v.txt", moist.NowMdHms())
+	}
+
+	return f
+}
+
+/// 响应头信息文件
+func filePathResponseHeader() string {
+	f := fmt.Sprintf("%v/%v", pathResponseHeader, fileResponseHeader)
+	return f
+}
+
+/// 模拟服务通用响应头信息文件
+func filePathCommonResponseHeader() string {
+	f := fmt.Sprintf("%v/%v", pathResponseHeader, fileCommonResponseHeader)
+	return f
 }
 
 /// 输出请求到文件
-func OutRequest(r *http.Request) {
+func OutRequest(url string, method string, header http.Header, body interface{}) {
 
-	uri := r.URL.String()
-	// 输出子目录
-	fileName := EscapseSlash(uri)
-
-	//递归创建目录
-	filePath := fmt.Sprintf("%v/%v", pathRequest(), fileName)
-
-	// 完整路径
-	fileFullPath := fmt.Sprintf("%v/request_%v.json", filePath, moist.NowYmdHms())
-	// log.Println(fileFullPath)
-
-	if !moist.IsExist(fileFullPath) {
-		// 创建目录
-		err := os.MkdirAll(filePath, os.ModePerm)
+	path := pathURLRequest(url, method)
+	// log.Println(path)
+	if !moist.IsExist(path) {
+		//递归创建目录
+		err := os.MkdirAll(path, os.ModePerm)
 		if err != nil {
-			log.Printf("创建目录失败。[%v][%v]", filePath, err)
+			logger.WithFields(logrus.Fields{logFieldPath: path, logFieldError: err}).Warn("创建目录失败")
 		}
 	}
 
-	// 读取请求体
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Print("ioutil.ReadAll() ", err.Error())
-	}
-	body := string(data)
-
+	// 输出内容
 	m := make(map[string]interface{})
-	m["header"] = r.Header
+	m["url"] = url
+	m["header"] = header
 	m["body"] = body
 
+	// 文件完整路径
+	fileFullPath := fmt.Sprintf("%v/%v", path, fileRequest())
+	// log.Println(fileFullPath)
+
 	// 输出请求到文件
-	err = moist.OutJson(fileFullPath, m)
+	err := moist.OutJson(fileFullPath, m)
 	if err != nil {
 		log.Print(err)
 	}
 }
 
 /// 输出响应体到文件
-func OutResponseBody(method string, uri string, body []byte) {
+func OutResponseBody(method string, url string, isJSON bool, body []byte) {
 
-	path := fullPathURLResponse(uri, method)
+	path := pathURLResponse(url, method)
 	// log.Println(path)
 	if !moist.IsExist(path) {
 		// 创建目录
 		err := os.MkdirAll(path, os.ModePerm)
 		if err != nil {
-			log.Printf("创建目录失败。[%v][%v]", path, err)
+			logger.WithFields(logrus.Fields{logFieldPath: path, logFieldError: err}).Warn("创建目录失败")
 		}
 	}
 
-	// 完整路径
-	fileFullPath := fmt.Sprintf("%v/body_%v_%v.json", path, method, moist.NowYmdHms())
+	// 文件完整路径
+	fileFullPath := fmt.Sprintf("%v/%v", path, fileResponse(isJSON))
 	// log.Println(fileFullPath)
 
 	content := string(body)
-	m, err := moist.JsonToMap(content)
-	// 字符串能转换成JSON时，输出Map(或Map切片)到文件
-	if err == nil {
-		errOut := moist.OutJson(fileFullPath, m)
-		if errOut != nil {
-			log.Print(errOut)
+
+	isSaved := false
+	if isJSON {
+		m, err := moist.JsonToMap(content)
+		if err != nil {
+			logger.WithFields(logrus.Fields{logFieldFile: fileFullPath, logFieldError: err}).Warn("响应信息转换JSON失败")
 		}
-		return
+
+		// 字符串能转换成JSON时，输出Map(或Map切片)到文件
+		if err == nil {
+			errOut := moist.OutJson(fileFullPath, m)
+			if errOut != nil {
+				logger.WithFields(logrus.Fields{logFieldFile: fileFullPath, logFieldError: errOut}).Warn("保存响应信息失败")
+			}
+			return
+		}
+
+		isSaved = true
 	}
 
-	// 字符串不能转换成JSON时，直接输出响应体到文件
-	if err != nil {
-		errOut := moist.WriteFile(fileFullPath, []string{content})
-		if errOut != nil {
-			log.Print(errOut)
+	// 上面的处理未保存成功时
+	if !isSaved {
+		// 保存为普通文件内容
+		err := moist.WriteFile(fileFullPath, []string{content})
+		if err != nil {
+			logger.WithFields(logrus.Fields{logFieldFile: fileFullPath, logFieldError: err}).Warn("保存响应信息失败")
 		}
-		return
 	}
 }
 
 /// 输出响应到文件
-func OutResponseHeader(file string, mHeader map[string]http.Header) {
+func OutResponseHeader(mHeader map[string]http.Header) {
 
-	filePath := fmt.Sprintf("%v%v/%v", moist.CurrentDir(), responsePath, file)
+	path := pathResponseHeader
+	// log.Println(path)
+	if !moist.IsExist(path) {
+		// 创建目录
+		err := os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			logger.WithFields(logrus.Fields{logFieldPath: path, logFieldError: err}).Warn("创建目录失败")
+		}
+	}
+
+	// 文件完整路径
+	fileFullPath := filePathResponseHeader()
 
 	// 输出响应头
-	err := moist.OutJson(filePath, mHeader)
+	err := moist.OutJson(fileFullPath, mHeader)
 	if err != nil {
 		log.Print(err)
 	}
@@ -138,25 +192,24 @@ func OutResponseHeader(file string, mHeader map[string]http.Header) {
 }
 
 /// 获取URL的响应文件列表
-func LoadResponseFile(uri string, method string) ([]string, error) {
+func LoadResponseFile(url string, method string) ([]string, error) {
 
-	// URL对应响应目录下的URI对应的目录
-	path := fullPathURLResponse(uri, method)
+	// URL对应响应目录下的URL对应的目录
+	path := pathURLResponse(url, method)
 
 	var file []string
 	sub, err := ioutil.ReadDir(path)
 	if err != nil {
-		log.Printf("目录不存在，或打开错误。[%v]", path)
+		logger.WithFields(logrus.Fields{logFieldPath: path, logFieldError: err}).Warn("目录不存在，或打开错误")
+
 		// 不返回error
 		return file, nil
 	}
 
-	// 响应文件所在的目录
-	filePath := pathURLResponse(uri, method)
-
+	// 文件列表
 	for _, f := range sub {
 		if !f.IsDir() {
-			fname := fmt.Sprintf("%v/%v", filePath, f.Name())
+			fname := fmt.Sprintf("%v/%v", path, f.Name())
 			file = append(file, fname)
 		}
 	}
@@ -165,11 +218,14 @@ func LoadResponseFile(uri string, method string) ([]string, error) {
 }
 
 /// 保存模拟服务信息
-func OutputMockServiceInfo(inputFile string, infoSlice []MockServiceInfo) error {
+func OutputMockServiceInfo(config Config, infoSlice []MockServiceInfo) error {
 
-	bkFile := fmt.Sprintf("%v/backup/input_%v.yml", moist.CurrentDir(), moist.NowYmdHms())
+	bkFileName := strings.Replace(config.InfoFile, ".", fmt.Sprintf("_%v.", moist.NowYmdHms()), 1)
+	bkFile := fmt.Sprintf("%v/%v", pathBackup, bkFileName)
 	// log.Println(bkFile)
-	err := moist.CopyFile(inputFile, bkFile)
+
+	// 复制
+	err := moist.CopyFile(config.InfoFile, bkFile)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -177,7 +233,7 @@ func OutputMockServiceInfo(inputFile string, infoSlice []MockServiceInfo) error 
 
 	// 备份成功后覆盖当前yml文件
 	if moist.IsExist(bkFile) {
-		err = yml.OutYaml(inputFile, infoSlice)
+		err = yml.OutYaml(config.InfoFile, infoSlice)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -188,10 +244,14 @@ func OutputMockServiceInfo(inputFile string, infoSlice []MockServiceInfo) error 
 }
 
 /// 保存目标主机
-func OutputHost(file string, hostSlice []string) error {
-	bkFile := fmt.Sprintf("%v/backup/host_%v.yml", moist.CurrentDir(), moist.NowYmdHms())
+func OutputHost(config Config, hostSlice []string) error {
+
+	bkFileName := strings.Replace(config.HostFile, ".", fmt.Sprintf("_%v.", moist.NowYmdHms()), 1)
+	bkFile := fmt.Sprintf("%v/%v", pathBackup, bkFileName)
 	// log.Println(bkFile)
-	err := moist.CopyFile(file, bkFile)
+
+	// 复制
+	err := moist.CopyFile(config.HostFile, bkFile)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -199,7 +259,7 @@ func OutputHost(file string, hostSlice []string) error {
 
 	// 备份成功后覆盖当前yml文件
 	if moist.IsExist(bkFile) {
-		err = yml.OutYaml(file, hostSlice)
+		err = yml.OutYaml(config.HostFile, hostSlice)
 		if err != nil {
 			log.Println(err)
 			return err

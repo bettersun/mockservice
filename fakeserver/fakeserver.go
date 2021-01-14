@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -33,6 +34,14 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func hello(w http.ResponseWriter, r *http.Request) {
+
+	// 读取请求的Body
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(fmt.Sprintf("Request Body: %v", string(body)))
+
 	if r.Method == httpMethodGet {
 		fmt.Fprintf(w, "[GET] Hello, world.")
 		return
@@ -58,6 +67,14 @@ func goodbye(w http.ResponseWriter, r *http.Request) {
 }
 
 func helloBS(w http.ResponseWriter, r *http.Request) {
+
+	// 读取请求的Body
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(fmt.Sprintf("Request Body: %v", string(body)))
+
 	if r.Method == httpMethodGet {
 		fmt.Fprintf(w, "[GET] Hello, bettersun.")
 		return
