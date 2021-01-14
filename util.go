@@ -89,7 +89,7 @@ func filePathCommonResponseHeader() string {
 }
 
 /// 输出请求到文件
-func OutRequest(url string, method string, header http.Header, body interface{}) {
+func OutRequest(url string, method string, header http.Header, body string) {
 
 	path := pathURLRequest(url, method)
 	// log.Println(path)
@@ -101,18 +101,32 @@ func OutRequest(url string, method string, header http.Header, body interface{})
 		}
 	}
 
+	isBodyJSON := false
+	mBody, err := moist.JsonToMap(body)
+	if err != nil {
+		logger.Debug("请求体非JSON")
+	}
+	if err == nil {
+		isBodyJSON = true
+	}
+
 	// 输出内容
 	m := make(map[string]interface{})
 	m["url"] = url
 	m["header"] = header
-	m["body"] = body
+	// 请求体为JSON时
+	if isBodyJSON {
+		m["body"] = mBody
+	} else {
+		m["body"] = body
+	}
 
 	// 文件完整路径
 	fileFullPath := fmt.Sprintf("%v/%v", path, fileRequest())
 	// log.Println(fileFullPath)
 
 	// 输出请求到文件
-	err := moist.OutJson(fileFullPath, m)
+	err = moist.OutJson(fileFullPath, m)
 	if err != nil {
 		log.Print(err)
 	}

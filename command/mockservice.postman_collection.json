@@ -30,9 +30,16 @@
 		},
 		{
 			"name": "9999/bettersun/hello",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
 				"method": "GET",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[Get]Hello, request header"
+				},
 				"url": {
 					"raw": "http://127.0.0.1:9999/bettersun/hello",
 					"protocol": "http",
@@ -43,6 +50,29 @@
 						"1"
 					],
 					"port": "9999",
+					"path": [
+						"bettersun",
+						"hello"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9527/bettersun/hello",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:9527/bettersun/hello",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9527",
 					"path": [
 						"bettersun",
 						"hello"
@@ -79,6 +109,15 @@
 			"request": {
 				"method": "POST",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"message\": \"[POST]hello, request header\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
 					"raw": "http://127.0.0.1:9999/bettersun/hello",
 					"protocol": "http",
@@ -148,6 +187,10 @@
 			"request": {
 				"method": "PUT",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\r\n\t\"message\": \"[PUT]hello, request header\"\r\n}]"
+				},
 				"url": {
 					"raw": "http://127.0.0.1:9999/bettersun/hello",
 					"protocol": "http",
