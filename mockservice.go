@@ -275,8 +275,7 @@ func doProxyService(w http.ResponseWriter, r *http.Request, host string) {
 /// 模拟服务
 func doMockService(w http.ResponseWriter, r *http.Request, info MockServiceInfo, config *Config) {
 	msg := "使用模拟服务"
-	logger.WithFields(logrus.Fields{logFieldMockResponseFile: info.ResponseFile}).Info(msg)
-	msg = fmt.Sprintf("%v %v[%v]", msg, logFieldMockResponseFile, info.ResponseFile)
+	logger.Info(msg)
 	go Notify(msg)
 
 	url := r.URL.String()
@@ -368,66 +367,92 @@ func doMockService(w http.ResponseWriter, r *http.Request, info MockServiceInfo,
 	// 响应文件
 	responseFile := info.ResponseFile
 
-	// 响应文件不存在
-	if !moist.IsExist(responseFile) {
-		msg := "模拟服务响应文件不存在"
+	var stream []byte
+	// 响应体文件未指定
+	if responseFile == "" {
+		msg := "模拟服务响应文件未指定，响应体返回空内容。"
 		logger.WithFields(logrus.Fields{logFieldFile: responseFile}).Warn(msg)
 
 		// 通知Flutter
 		msg = fmt.Sprintf("%v[%v]", msg, responseFile)
 		go Notify(msg)
-
-		m := make(map[string]interface{}, 0)
-		m["message"] = msg
-
-		msgStream, err := json.Marshal(m)
-		if err != nil {
-			log.Println(err)
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(msgStream)
-		return
 	}
+	// 响应体文件指定时进行处理
+	if responseFile != "" {
+		// 日志：模拟服务响应文件
+		logger.WithFields(logrus.Fields{logFieldMockResponseFile: info.ResponseFile}).Info()
+		msg = fmt.Sprintf("%v[%v]", logFieldMockResponseFile, info.ResponseFile)
+		go Notify(msg)
 
-	// 响应体
-	var stream []byte
-	if isResponseJSON {
-		// 响应文件转换成Map
-		data, err := moist.JsonFileToMap(responseFile)
-		if err != nil {
-			log.Println(err)
+		// 响应文件不存在
+		if !moist.IsExist(responseFile) {
+			msg = "模拟服务响应文件不存在"
+			logger.WithFields(logrus.Fields{logFieldFile: responseFile}).Warn(msg)
+
+			// 通知Flutter
+			msg = fmt.Sprintf("%v[%v]", msg, responseFile)
+			go Notify(msg)
+
+			m := make(map[string]interface{}, 0)
+			m["message"] = msg
+
+			msgStream, err := json.Marshal(m)
+			if err != nil {
+				log.Println(err)
+			}
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(msgStream)
+			return
 		}
 
-		// 转换成字节
-		stream, err = json.Marshal(data)
-		if err != nil {
-			log.Println(err)
-		}
-	} else {
-		// 响应体非JSON
-		data, err := ioutil.ReadFile(responseFile)
-		if err != nil {
-			log.Println(err)
-		}
+		// 响应体
+		// var stream []byte
+		if isResponseJSON {
+			// 响应文件转换成Map
+			data, err := moist.JsonFileToMap(responseFile)
+			if err != nil {
+				log.Println(err)
+			}
 
-		stream = data
+			// 转换成字节
+			stream, err = json.Marshal(data)
+			if err != nil {
+				log.Println(err)
+			}
+		} else {
+			// 响应体非JSON
+			data, err := ioutil.ReadFile(responseFile)
+			if err != nil {
+				log.Println(err)
+			}
+
+			stream = data
+		}
 	}
-
-	// 调试模式输出
-	logger.WithFields(logrus.Fields{
-		logFieldURL:            url,
-		logFieldHTTPMethod:     r.Method,
-		logFieldResponseHeader: w.Header(),
-		"模拟服务响应文件":             responseFile,
-		"模拟服务响应体":              string(stream),
-	}).Debug()
 
 	// 响应状态码，必须放在w.Header().Set(k, v)之后
-	if info.StatusCode == 0 {
+	statusCode := info.StatusCode
+	if statusCode == 0 {
+		// 响应状态码为0时，设为200
+		statusCode = http.StatusOK
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(info.StatusCode)
 	}
+	logger.WithFields(logrus.Fields{logFieldMockStatusCode: statusCode}).Warn()
+	// 通知Flutter
+	msg = fmt.Sprintf("%v[%v]", logFieldMockStatusCode, statusCode)
+	go Notify(msg)
+
+	// 调试模式输出
+	logger.WithFields(logrus.Fields{
+		logFieldURL:              url,
+		logFieldHTTPMethod:       r.Method,
+		logFieldResponseHeader:   w.Header(),
+		logFieldMockStatusCode:   statusCode,
+		logFieldMockResponseFile: responseFile,
+		logFieldMockResponseBody: string(stream),
+	}).Debug()
 
 	// 响应
 	if isGzipped {

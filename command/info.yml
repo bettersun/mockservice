@@ -5,7 +5,7 @@
   useMockService: true
   statusCode: 200
   responseFile: json/hello.json
-  description: /bettersun/hello
+  description: hello_POST
 - url: /bettersun/hello
   method: GET
   targetHost: http://localhost:8012
@@ -13,7 +13,7 @@
   useMockService: false
   statusCode: 200
   responseFile: ""
-  description: /bettersun/hello
+  description: hello_GET
 - url: /bettersun/hello
   method: PUT
   targetHost: http://localhost:8012
@@ -21,4 +21,12 @@
   useMockService: false
   statusCode: 200
   responseFile: ""
-  description: /bettersun/hello
+  description: Hello_PUT
+- url: /bettersun/hello
+  method: VIEW
+  targetHost: http://localhost:8012
+  useDefaultTargetHost: true
+  useMockService: false
+  statusCode: 200
+  responseFile: ""
+  description: Hello_VIEW

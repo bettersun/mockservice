@@ -56,7 +56,9 @@ const logFieldRequestHeader = "请求头"
 const logFieldRequestBody = "请求体"
 const logFieldResponseHeader = "响应头"
 const logFieldResponseBody = "响应体"
+const logFieldMockStatusCode = "模拟服务响应状态码"
 const logFieldMockResponseFile = "模拟服务响应文件"
+const logFieldMockResponseBody = "模拟服务响应体"
 
 /// 程序所需文件(Mac开发用)
 // const ConfigFile = "/Users/sunjiashu/Documents/Develop/github.com/bettersun/mockservice/command/config.yml"

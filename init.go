@@ -18,7 +18,7 @@ var logger = logrus.New()
 /// 初始化
 func init() {
 	// 配置文件
-	cfgFile := ConfigFile
+	cfgFile := fmt.Sprintf("%v/%v", moist.CurrentDir(), ConfigFile)
 
 	// 配置文件不存在
 	if !moist.IsExist(cfgFile) {
@@ -39,9 +39,10 @@ func init() {
 			"模拟服务信息文件": cfg.LogLevel,
 		}).Warn("配置文件不存在，使用默认配置")
 
-		// 通知Flutter
-		msg := fmt.Sprintf("配置文件[%v]不存在，使用默认端口[%v]", cfgFile, defaultPort)
-		go Notify(msg)
+		// Go的init()方法里向Flutter端发送消息，Flutter端接收不到。
+		// // 通知Flutter
+		// msg := fmt.Sprintf("配置文件[%v]不存在，使用默认端口[%v]", cfgFile, defaultPort)
+		// go Notify(msg)
 	}
 
 	// 配置文件存在
@@ -83,15 +84,19 @@ func init() {
 				"模拟服务信息文件": cfg.LogLevel,
 			}).Warn("读取配置文件发生错误，使用默认配置")
 
-			// 通知Flutter
-			msg := fmt.Sprintf("读取配置文件[%v]发生错误，使用默认端口[%v]", cfgFile, defaultPort)
-			go Notify(msg)
+			// Go的init()方法里向Flutter端发送消息，Flutter端接收不到。
+			// // 通知Flutter
+			// msg := fmt.Sprintf("读取配置文件[%v]发生错误，使用默认端口[%v]", cfgFile, defaultPort)
+			// go Notify(msg)
 		}
 	}
 }
 
 /// 初始化日志配置
 func initLogConfig(file string, level int) {
+
+	file = fmt.Sprintf("%v/%v", moist.CurrentDir(), file)
+
 	// JSON格式
 	// logger.SetFormatter(&logrus.JSONFormatter{})
 
@@ -154,7 +159,8 @@ func Load() error {
 /// 读取目标主机
 func LoadHost(config *Config) {
 	// 目标主机文件
-	hFile := config.HostFile
+	// hFile := config.HostFile
+	hFile := fmt.Sprintf("%v/%v", moist.CurrentDir(), config.HostFile)
 
 	// 目标主机文件不存在
 	if !moist.IsExist(hFile) {
@@ -201,7 +207,8 @@ func LoadHost(config *Config) {
 func LoadMockServiceInfo(config *Config) {
 
 	// 模拟服务信息文件
-	infoFile := config.InfoFile
+	// infoFile := config.InfoFile
+	infoFile := fmt.Sprintf("%v/%v", moist.CurrentDir(), config.InfoFile)
 
 	// 模拟服务信息文件不存在
 	if !moist.IsExist(infoFile) {

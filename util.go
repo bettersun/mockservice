@@ -44,7 +44,7 @@ func escapseURL(s string) string {
 /// 请求信息文件存放目录(相对)
 func pathURLRequest(url string, method string) string {
 	pURL := escapseURL(url)
-	p := fmt.Sprintf("%v/%v_%v", pathRequest, pURL, method)
+	p := fmt.Sprintf("%v/%v/%v_%v", moist.CurrentDir(), pathRequest, pURL, method)
 
 	return p
 }
@@ -52,7 +52,7 @@ func pathURLRequest(url string, method string) string {
 /// 响应信息文件存放目录(相对)
 func pathURLResponse(url string, method string) string {
 	pURL := escapseURL(url)
-	p := fmt.Sprintf("%v/%v_%v", pathResponse, pURL, method)
+	p := fmt.Sprintf("%v/%v/%v_%v", moist.CurrentDir(), pathResponse, pURL, method)
 
 	return p
 }
@@ -78,13 +78,13 @@ func fileResponse(isJSON bool) string {
 
 /// 响应头信息文件
 func filePathResponseHeader() string {
-	f := fmt.Sprintf("%v/%v", pathResponseHeader, fileResponseHeader)
+	f := fmt.Sprintf("%v/%v/%v", moist.CurrentDir(), pathResponseHeader, fileResponseHeader)
 	return f
 }
 
 /// 模拟服务通用响应头信息文件
 func filePathCommonResponseHeader() string {
-	f := fmt.Sprintf("%v/%v", pathResponseHeader, fileCommonResponseHeader)
+	f := fmt.Sprintf("%v/%v/%v", moist.CurrentDir(), pathResponseHeader, fileCommonResponseHeader)
 	return f
 }
 
