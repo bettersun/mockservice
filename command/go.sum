@@ -1,6 +1,4 @@
 github.com/Xuanwo/go-locale v0.3.0/go.mod h1:6qbT9M726OJgyiGZro2YwPmx63wQzlH+VvtjJWQoftw=
-github.com/bettersun/moist/yaml v0.0.0-20201229122944-f48691f8f589 h1:hcdFgRMa8X6+PFTtD6OLDABkR9Aoqh9/080ahiGh46o=
-github.com/bettersun/moist/yaml v0.0.0-20201229122944-f48691f8f589/go.mod h1:NQw87BJplca5DWgKRwPfdzfhc+zONvznCdWQ9PTaezk=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

@@ -49,12 +49,10 @@ func init() {
 	if moist.IsExist(cfgFile) {
 		// 读取配置
 		var cfg Config
-		result, err := yml.YamlFileToStruct(cfgFile, &cfg)
+		err := yml.YamlFileToStruct(cfgFile, &cfg)
 
 		// 配置文件读取成功
 		if err == nil {
-			cfg = *result.(*Config)
-
 			// 地址设给全局变量
 			config = &cfg
 
@@ -176,10 +174,9 @@ func LoadHost(config *Config) {
 	if moist.IsExist(hFile) {
 		// 读取目标主机
 		var hosts []string
-		result, err := yml.YamlFileToStruct(hFile, &hosts)
+		err := yml.YamlFileToStruct(hFile, &hosts)
 
 		if err == nil {
-			hosts = *result.(*[]string)
 			hostSlice = hosts
 			// 调试模式输出
 			logger.WithFields(logrus.Fields{"目标主机": hostSlice}).Debug()
@@ -224,10 +221,9 @@ func LoadMockServiceInfo(config *Config) {
 	if moist.IsExist(infoFile) {
 		// 读取模拟服务信息
 		var info []MockServiceInfo
-		result, err := yml.YamlFileToStruct(infoFile, &info)
+		err := yml.YamlFileToStruct(infoFile, &info)
 
 		if err == nil {
-			info = *(result.(*[]MockServiceInfo))
 			mockServiceInfoSlice = info
 			// 调试模式输出
 			logger.WithFields(logrus.Fields{"模拟服务信息": mockServiceInfoSlice}).Debug()
@@ -264,10 +260,9 @@ func LoadCommonResponseHeader(config *Config) {
 	if moist.IsExist(fCommonResponesHeader) {
 		// 读取模拟服务通用响应头
 		var cmnRespHdr http.Header
-		result, err := moist.JsonFileToStruct(fCommonResponesHeader, &cmnRespHdr)
+		err := moist.JsonFileToStruct(fCommonResponesHeader, &cmnRespHdr)
 
 		if err == nil {
-			cmnRespHdr = *(result.(*http.Header))
 			commonResponseHeader = cmnRespHdr
 			// 调试模式输出
 			logger.WithFields(logrus.Fields{"模拟服务通用响应头": commonResponseHeader}).Debug()
@@ -307,7 +302,7 @@ func LoadResponseHeader(config *Config) {
 	if moist.IsExist(fResponseHeader) {
 		mHeader := make(map[string]http.Header)
 
-		result, err := yml.YamlFileToStruct(fResponseHeader, &mHeader)
+		err := yml.YamlFileToStruct(fResponseHeader, &mHeader)
 		if err != nil {
 			msg := "读取响应头信息文件发生错误"
 			logger.WithFields(logrus.Fields{
@@ -315,7 +310,7 @@ func LoadResponseHeader(config *Config) {
 				logFieldError: err,
 			}).Warn(msg)
 		}
-		mapResponseHeader = *result.(*map[string]http.Header)
+		mapResponseHeader = mHeader
 
 		// 调试模式输出
 		logger.WithFields(logrus.Fields{"响应头信息": mapResponseHeader}).Debug()
