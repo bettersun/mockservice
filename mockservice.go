@@ -519,18 +519,18 @@ func ListMockServiceInfo() []MockServiceInfo {
 
 /// 更新单个模拟服务信息和URL对应模拟服务信息Map
 func UpdateMockServiceInfo(info MockServiceInfo) {
-
 	// 更新内存中的模拟服务信息
 	for i, v := range mockServiceInfoSlice {
 		if v.URL == info.URL && v.Method == info.Method {
 			mockServiceInfoSlice[i] = info
 		}
 	}
+
+	logger.WithFields(logrus.Fields{"模拟服务信息": info}).Info("模拟服务信息已更新")
 }
 
 /// 更新单个模拟服务信息和URL对应模拟服务信息Map
 func UpdateAllMockServiceInfo(newInfoSlice []MockServiceInfo) {
-
 	// 更新内存中的模拟服务信息
 	for i, v := range mockServiceInfoSlice {
 		for _, v2 := range newInfoSlice {
@@ -540,6 +540,8 @@ func UpdateAllMockServiceInfo(newInfoSlice []MockServiceInfo) {
 			}
 		}
 	}
+
+	logger.WithFields(logrus.Fields{"全部的模拟服务信息": newInfoSlice}).Info("全部的模拟服务信息已更新")
 }
 
 // 保存模拟服务信息

@@ -90,7 +90,6 @@ func filePathCommonResponseHeader() string {
 
 /// 输出请求到文件
 func OutRequest(url string, method string, header http.Header, body string) {
-
 	path := pathURLRequest(url, method)
 	// log.Println(path)
 	if !moist.IsExist(path) {
@@ -134,7 +133,6 @@ func OutRequest(url string, method string, header http.Header, body string) {
 
 /// 输出响应体到文件
 func OutResponseBody(method string, url string, isJSON bool, body []byte) {
-
 	path := pathURLResponse(url, method)
 	// log.Println(path)
 	if !moist.IsExist(path) {
@@ -182,7 +180,6 @@ func OutResponseBody(method string, url string, isJSON bool, body []byte) {
 
 /// 输出响应到文件
 func OutResponseHeader(mHeader map[string]http.Header) {
-
 	path := pathResponseHeader
 	// log.Println(path)
 	if !moist.IsExist(path) {
@@ -207,7 +204,6 @@ func OutResponseHeader(mHeader map[string]http.Header) {
 
 /// 获取URL的响应文件列表
 func LoadResponseFile(url string, method string) ([]string, error) {
-
 	// URL对应响应目录下的URL对应的目录
 	path := pathURLResponse(url, method)
 
@@ -233,13 +229,14 @@ func LoadResponseFile(url string, method string) ([]string, error) {
 
 /// 保存模拟服务信息
 func OutputMockServiceInfo(config Config, infoSlice []MockServiceInfo) error {
-
+	// 备份
 	bkFileName := strings.Replace(config.InfoFile, ".", fmt.Sprintf("_%v.", moist.NowYmdHms()), 1)
 	bkFile := fmt.Sprintf("%v/%v", pathBackup, bkFileName)
 	// log.Println(bkFile)
 
 	// 复制
-	err := moist.CopyFile(config.InfoFile, bkFile)
+	infoFile := fmt.Sprintf("%v/%v", moist.CurrentDir(), config.InfoFile)
+	err := moist.CopyFile(infoFile, bkFile)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -247,7 +244,7 @@ func OutputMockServiceInfo(config Config, infoSlice []MockServiceInfo) error {
 
 	// 备份成功后覆盖当前yml文件
 	if moist.IsExist(bkFile) {
-		err = yml.OutYaml(config.InfoFile, infoSlice)
+		err = yml.OutYaml(infoFile, infoSlice)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -259,13 +256,14 @@ func OutputMockServiceInfo(config Config, infoSlice []MockServiceInfo) error {
 
 /// 保存目标主机
 func OutputHost(config Config, hostSlice []string) error {
-
+	// 备份
 	bkFileName := strings.Replace(config.HostFile, ".", fmt.Sprintf("_%v.", moist.NowYmdHms()), 1)
 	bkFile := fmt.Sprintf("%v/%v", pathBackup, bkFileName)
 	// log.Println(bkFile)
 
 	// 复制
-	err := moist.CopyFile(config.HostFile, bkFile)
+	hostFile := fmt.Sprintf("%v/%v", moist.CurrentDir(), config.HostFile)
+	err := moist.CopyFile(hostFile, bkFile)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -273,7 +271,7 @@ func OutputHost(config Config, hostSlice []string) error {
 
 	// 备份成功后覆盖当前yml文件
 	if moist.IsExist(bkFile) {
-		err = yml.OutYaml(config.HostFile, hostSlice)
+		err = yml.OutYaml(hostFile, hostSlice)
 		if err != nil {
 			log.Println(err)
 			return err

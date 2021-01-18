@@ -91,54 +91,23 @@ func loadFunc(arguments interface{}) (reply interface{}, err error) {
 func updateInfoFunc(arguments interface{}) (reply interface{}, err error) {
 	log.Println("updateInfoFunc()")
 
-	// 检查参数
-	m := arguments.(map[interface{}]interface{})
+	// 参数转interface{}类型Key的map
+	mArgs := arguments.(map[interface{}]interface{})
 
-	useDefaultTargetHost, ok := m["useDefaultTargetHost"].(bool)
-	if !ok {
-		log.Println("ERROR: [useDefaultTargetHost]")
-	}
-	useMockService, ok := m["useMockService"].(bool)
-	if !ok {
-		log.Println("ERROR: [useMockService]")
-	}
-	targetHost, ok := m["targetHost"].(string)
-	if !ok {
-		log.Println("ERROR: [targetHost]")
-	}
-	url, ok := m["url"].(string)
-	if !ok {
-		log.Println("ERROR: [url]")
-	}
-	method, ok := m["method"].(string)
-	if !ok {
-		log.Println("ERROR: [method]")
-	}
-	// Flutter端的int，在Go端需要使用int32来接收，然后再转换成Int
-	statusCode, ok := m["statusCode"].(int32)
-	if !ok {
-		log.Println("ERROR: [statusCode]")
-	}
-	responseFile, ok := m["responseFile"].(string)
-	if !ok {
-		log.Println("ERROR: [responseFile]")
-	}
-	description, ok := m["description"].(string)
-	if !ok {
-		log.Println("ERROR: [description]")
+	// interface{}类型Key的map转为string类型Key的map
+	m, err := moist.ToStringKeyMap(mArgs)
+	if err != nil {
+		log.Println(err)
 	}
 
+	// map转为struct
 	var info mockservice.MockServiceInfo
+	err = moist.MapToStruct(m, &info)
+	if err != nil {
+		log.Println(err)
+	}
 
-	info.UseDefaultTargetHost = useDefaultTargetHost
-	info.UseMockService = useMockService
-	info.TargetHost = targetHost
-	info.URL = url
-	info.Method = method
-	info.StatusCode = int(statusCode)
-	info.ResponseFile = responseFile
-	info.Description = description
-
+	// 更新模拟服务信息
 	mockservice.UpdateMockServiceInfo(info)
 	return true, nil
 }
@@ -147,63 +116,32 @@ func updateInfoFunc(arguments interface{}) (reply interface{}, err error) {
 func updateAllInfoFunc(arguments interface{}) (reply interface{}, err error) {
 	log.Println("updateAllInfoFunc()")
 
-	// 检查参数
-	m := arguments.([]interface{})
+	// 参数
+	mArgs := arguments.([]interface{})
 
 	var infoSlice []mockservice.MockServiceInfo
+	for _, v := range mArgs {
 
-	for _, v := range m {
-		// 检查参数
-		vm := v.(map[interface{}]interface{})
+		// 单个切片元素转换为interface{}类型Key的map
+		mTmp := v.(map[interface{}]interface{})
 
-		useDefaultTargetHost, ok := vm["useDefaultTargetHost"].(bool)
-		if !ok {
-			log.Println("ERROR: [useDefaultTargetHost]")
-		}
-		useMockService, ok := vm["useMockService"].(bool)
-		if !ok {
-			log.Println("ERROR: [useMockService]")
-		}
-		targetHost, ok := vm["targetHost"].(string)
-		if !ok {
-			log.Println("ERROR: [targetHost]")
-		}
-		url, ok := vm["url"].(string)
-		if !ok {
-			log.Println("ERROR: [url]")
-		}
-		method, ok := vm["method"].(string)
-		if !ok {
-			log.Println("ERROR: [method]")
-		}
-		// Flutter端的int，在Go端需要使用int32来接收，然后再转换成Int
-		statusCode, ok := vm["statusCode"].(int32)
-		if !ok {
-			log.Println("ERROR: [statusCode]")
-		}
-		responseFile, ok := vm["responseFile"].(string)
-		if !ok {
-			log.Println("ERROR: [responseFile]")
-		}
-		description, ok := vm["description"].(string)
-		if !ok {
-			log.Println("ERROR: [description]")
+		// interface{}类型Key的map转为string类型Key的map
+		m, err := moist.ToStringKeyMap(mTmp)
+		if err != nil {
+			log.Println(err)
 		}
 
+		// map转为struct
 		var info mockservice.MockServiceInfo
-
-		info.UseDefaultTargetHost = useDefaultTargetHost
-		info.UseMockService = useMockService
-		info.TargetHost = targetHost
-		info.URL = url
-		info.Method = method
-		info.StatusCode = int(statusCode)
-		info.ResponseFile = responseFile
-		info.Description = description
+		err = moist.MapToStruct(m, &info)
+		if err != nil {
+			log.Println(err)
+		}
 
 		infoSlice = append(infoSlice, info)
 	}
 
+	// 更新全部模拟服务信息
 	mockservice.UpdateAllMockServiceInfo(infoSlice)
 	return true, nil
 }
