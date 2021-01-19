@@ -113,6 +113,7 @@ func OutRequest(url string, method string, header http.Header, body string) {
 	m := make(map[string]interface{})
 	m["url"] = url
 	m["header"] = header
+	m["method"] = method
 	// 请求体为JSON时
 	if isBodyJSON {
 		m["body"] = mBody
