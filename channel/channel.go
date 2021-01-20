@@ -27,7 +27,7 @@ const (
 	funcNameInfolist     = "infolist"
 	funcNameResponselist = "responselist"
 
-	// funcNameNotify = "notify"
+	funcNameRenameResponseFile = "renameResponseFile"
 )
 
 /// 声明插件结构体
@@ -51,6 +51,8 @@ func (MockServicePlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
 	ch.HandleFunc(funcNameHostlist, hostListFunc)
 	ch.HandleFunc(funcNameInfolist, infoListFunc)
 	ch.HandleFunc(funcNameResponselist, responseListFunc)
+
+	ch.HandleFunc(funcNameRenameResponseFile, renameResponseFileFunc)
 
 	// 用于向flutter端发送消息
 	mockservice.Channel = ch
@@ -226,4 +228,30 @@ func responseListFunc(arguments interface{}) (reply interface{}, err error) {
 	mResult := make(map[interface{}]interface{})
 	mResult["ResponseList"] = slice
 	return mResult, nil
+}
+
+/// 重命名响应文件
+func renameResponseFileFunc(arguments interface{}) (reply interface{}, err error) {
+	log.Println("renameResponseFileFunc()")
+
+	// 参数
+	m := arguments.(map[interface{}]interface{})
+	// 响应文件
+	responseFile, ok := m["responseFile"].(string)
+	if !ok {
+		log.Println("ERROR: [responseFile]")
+	}
+	// 新文件名
+	fileName, ok := m["fileName"].(string)
+	if !ok {
+		log.Println("ERROR: [fileName]")
+	}
+
+	err = mockservice.RenameResponseFile(responseFile, fileName)
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+
+	return true, nil
 }

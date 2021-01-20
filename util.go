@@ -41,7 +41,7 @@ func escapseURL(s string) string {
 	return result
 }
 
-/// 请求信息文件存放目录(相对)
+/// 请求信息文件存放目录
 func pathURLRequest(url string, method string) string {
 	pURL := escapseURL(url)
 	p := fmt.Sprintf("%v/%v/%v_%v", moist.CurrentDir(), pathRequest, pURL, method)
@@ -49,10 +49,17 @@ func pathURLRequest(url string, method string) string {
 	return p
 }
 
-/// 响应信息文件存放目录(相对)
+/// 响应信息文件存放目录(绝对)
 func pathURLResponse(url string, method string) string {
+	p := fmt.Sprintf("%v/%v", moist.CurrentDir(), pathRelativeURLResponse(url, method))
+
+	return p
+}
+
+/// 响应信息文件存放目录(相对)
+func pathRelativeURLResponse(url string, method string) string {
 	pURL := escapseURL(url)
-	p := fmt.Sprintf("%v/%v/%v_%v", moist.CurrentDir(), pathResponse, pURL, method)
+	p := fmt.Sprintf("%v/%v_%v", pathResponse, pURL, method)
 
 	return p
 }
@@ -217,10 +224,11 @@ func LoadResponseFile(url string, method string) ([]string, error) {
 		return file, nil
 	}
 
+	p := pathRelativeURLResponse(url, method)
 	// 文件列表
 	for _, f := range sub {
 		if !f.IsDir() {
-			fname := fmt.Sprintf("%v/%v", path, f.Name())
+			fname := fmt.Sprintf("%v/%v", p, f.Name())
 			file = append(file, fname)
 		}
 	}
@@ -277,6 +285,27 @@ func OutputHost(config Config, hostSlice []string) error {
 			log.Println(err)
 			return err
 		}
+	}
+
+	return nil
+}
+
+/// 保存目标主机
+func RenameResponseFile(responseFile string, fileName string) error {
+
+	file := fmt.Sprintf("%v/%v", moist.CurrentDir(), responseFile)
+	path := moist.FilePath(file, "/")
+	newFile := fmt.Sprintf("%v/%v", path, fileName)
+
+	log.Println(file)
+	log.Println(path)
+	log.Println(newFile)
+
+	//重命名文件
+	err := os.Rename(file, newFile)
+	if err != nil {
+		logger.WithFields(logrus.Fields{"响应文件": responseFile, "新文件名": fileName, logFieldError: err}).Error("重命名响应文件失败")
+		return err
 	}
 
 	return nil
