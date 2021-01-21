@@ -380,17 +380,20 @@ func doMockService(w http.ResponseWriter, r *http.Request, info MockServiceInfo,
 	// 响应体文件指定时进行处理
 	if responseFile != "" {
 		// 日志：模拟服务响应文件
-		logger.WithFields(logrus.Fields{logFieldMockResponseFile: info.ResponseFile}).Info()
-		msg = fmt.Sprintf("%v[%v]", logFieldMockResponseFile, info.ResponseFile)
+		logger.WithFields(logrus.Fields{logFieldMockResponseFile: responseFile}).Info()
+		msg = fmt.Sprintf("%v[%v]", logFieldMockResponseFile, responseFile)
 		go Notify(msg)
 
+		// 完整路径
+		fResponse := fmt.Sprintf("%v/%v", moist.CurrentDir(), responseFile)
+
 		// 响应文件不存在
-		if !moist.IsExist(responseFile) {
+		if !moist.IsExist(fResponse) {
 			msg = "模拟服务响应文件不存在"
-			logger.WithFields(logrus.Fields{logFieldFile: responseFile}).Warn(msg)
+			logger.WithFields(logrus.Fields{logFieldFile: fResponse}).Warn(msg)
 
 			// 通知Flutter
-			msg = fmt.Sprintf("%v[%v]", msg, responseFile)
+			msg = fmt.Sprintf("%v[%v]", msg, fResponse)
 			go Notify(msg)
 
 			m := make(map[string]interface{}, 0)
@@ -405,11 +408,11 @@ func doMockService(w http.ResponseWriter, r *http.Request, info MockServiceInfo,
 			return
 		}
 
-		// 响应体
-		// var stream []byte
+		// 响应文件存在
+		// 响应体为JSON
 		if isResponseJSON {
 			// 响应文件转换成Map
-			data, err := moist.JsonFileToMap(responseFile)
+			data, err := moist.JsonFileToMap(fResponse)
 			if err != nil {
 				log.Println(err)
 			}
@@ -421,7 +424,7 @@ func doMockService(w http.ResponseWriter, r *http.Request, info MockServiceInfo,
 			}
 		} else {
 			// 响应体非JSON
-			data, err := ioutil.ReadFile(responseFile)
+			data, err := ioutil.ReadFile(fResponse)
 			if err != nil {
 				log.Println(err)
 			}
