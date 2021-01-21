@@ -184,8 +184,13 @@ func doProxyService(w http.ResponseWriter, r *http.Request, host string) {
 	reqProxy, err := http.NewRequest(r.Method, reqURL, strings.NewReader(string(body)))
 	if err != nil {
 		msg := "创建转发请求发生错误"
-		logger.WithFields(logrus.Fields{logFieldHost: host, logFieldURL: url, logFieldHTTPMethod: r.Method}).Info(msg)
-		// log.Println(fmt.Sprintf("%v %v", msg, err))
+		logger.WithFields(logrus.Fields{
+			logFieldHost:       host,
+			logFieldURL:        url,
+			logFieldHTTPMethod: r.Method,
+			logFieldError:      err,
+		}).Error(msg)
+		go Notify(msg)
 		return
 	}
 
@@ -197,7 +202,14 @@ func doProxyService(w http.ResponseWriter, r *http.Request, host string) {
 	// 发起请求
 	responseProxy, err := cli.Do(reqProxy)
 	if err != nil {
-		fmt.Print("cli.Do() ", err.Error())
+		msg := "转发请求发生错误"
+		logger.WithFields(logrus.Fields{
+			logFieldHost:       host,
+			logFieldURL:        url,
+			logFieldHTTPMethod: r.Method,
+			logFieldError:      err,
+		}).Error(msg)
+		go Notify(msg)
 		return
 	}
 	defer responseProxy.Body.Close()
