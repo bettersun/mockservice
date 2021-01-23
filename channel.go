@@ -9,17 +9,17 @@ import (
 	"github.com/go-flutter-desktop/go-flutter/plugin"
 )
 
-// 指向go-flutter的Plugin
+/// 指向go-flutter的Plugin
 // 用于向Flutter端发送消息
 var Channel *plugin.MethodChannel
 
-// 函数名: 向Flutter发送通知表示信息
+/// 函数名: 向Flutter发送通知表示信息
 var funcNameNotify = "notify"
 
-// 函数名: 向Flutter发送通知，添加新的模拟服务信息
+/// 函数名: 向Flutter发送通知，添加新的模拟服务信息
 var funcNameNotifyAddMockServiceInfo = "notifyAddMockServiceInfo"
 
-//向Flutter发送通知表示信息
+/// 向Flutter发送通知表示信息
 func Notify(message string) {
 
 	// 指向go-flutter的Plugin后才可使用
@@ -35,7 +35,7 @@ func Notify(message string) {
 	}
 }
 
-// 向Flutter发送通知，添加新的模拟服务信息
+/// 向Flutter发送通知，添加新的模拟服务信息
 func NotifyAddMockServiceInfo(info interface{}) {
 
 	// 指向go-flutter的Plugin后才可使用

@@ -21,9 +21,7 @@ func main() {
 
 	http.HandleFunc("/bettersun", home)
 	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/goodbye", goodbye)
 	http.HandleFunc("/bettersun/hello", helloBS)
-	http.HandleFunc("/bettersun/goodbye", goodbyeBS)
 
 	log.Println("ListenAndServe 127.0.0.1:8012")
 	server.ListenAndServe()
@@ -62,10 +60,6 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "unsupport http method.[hello]")
 }
 
-func goodbye(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Goodbye, world.")
-}
-
 func helloBS(w http.ResponseWriter, r *http.Request) {
 
 	// 读取请求的Body
@@ -93,8 +87,4 @@ func helloBS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "unsupport http method.[bettersun]")
-}
-
-func goodbyeBS(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Goodbye, bettersun.")
 }
