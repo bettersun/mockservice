@@ -15,31 +15,28 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// 全局变量：配置
+/// 全局变量：配置
 var config *Config
 
-// 全局变量：目标主机切片
+/// 全局变量：目标主机切片
 var hostSlice []string
 
-// 全局变量： 模拟服务信息切片
+/// 全局变量： 模拟服务信息切片
 var mockServiceInfoSlice []MockServiceInfo
 
-// 全局变量：HTTP服务
+/// 全局变量：HTTP服务
 var server http.Server
 
-// 全局变量：默认目标主机
+/// 全局变量：默认目标主机
 var defaultTargetHost string
 
-// 全局变量：默认目标主机
-var targetHostSlice []string
-
-// 全局变量：响应头Map
+/// 全局变量：响应头Map
 var mapResponseHeader map[string]http.Header
 
-// 全局变量：模拟服务通用响应头
+/// 全局变量：模拟服务通用响应头
 var commonResponseHeader http.Header
 
-// 模拟服务(命令行调用)
+/// 模拟服务(命令行调用)
 func MockServiceCommand() {
 	MockService()
 	log.Println(moist.CurrentDir())
@@ -515,7 +512,7 @@ func isResponseJSON(header http.Header) bool {
 	return result
 }
 
-// 响应头的键值
+/// 响应头的键值
 func keyResponseHeader(url string, method string) string {
 	// URL(有参数时，问号之前的部分)
 	bURL := baseURL(url)
@@ -559,7 +556,7 @@ func UpdateAllMockServiceInfo(newInfoSlice []MockServiceInfo) {
 	logger.WithFields(logrus.Fields{"全部的模拟服务信息": newInfoSlice}).Info("全部的模拟服务信息已更新")
 }
 
-// 保存模拟服务信息
+/// 保存模拟服务信息
 func SaveMockServiceInfo() error {
 	// 保存模拟服务信息
 	err := OutputMockServiceInfo(*config, mockServiceInfoSlice)
@@ -576,7 +573,7 @@ func SaveMockServiceInfo() error {
 	return err
 }
 
-// 保存主机列表
+/// 保存主机列表
 func SaveHost() error {
 	err := OutputHost(*config, hostSlice)
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// 全局变量：日志记录器
+/// 全局变量：日志记录器
 var logger = logrus.New()
 
 /// 初始化
