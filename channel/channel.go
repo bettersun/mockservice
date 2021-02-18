@@ -23,9 +23,10 @@ const (
 	funcNameUpdateAllInfo = "updateAllInfo"
 	funcNameSaveInfo      = "saveInfo"
 
-	funcNameHostlist     = "hostlist"
-	funcNameInfolist     = "infolist"
-	funcNameResponselist = "responselist"
+	funcNameHostlist             = "hostlist"
+	funcNameSetDefaultTargetHost = "setDefaultTargetHost"
+	funcNameInfolist             = "infolist"
+	funcNameResponselist         = "responselist"
 
 	funcNameRenameResponseFile = "renameResponseFile"
 )
@@ -49,6 +50,7 @@ func (MockServicePlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
 	ch.HandleFunc(funcNameSaveInfo, saveInfoFunc)
 
 	ch.HandleFunc(funcNameHostlist, hostListFunc)
+	ch.HandleFunc(funcNameSetDefaultTargetHost, setDefaultTargetHostFunc)
 	ch.HandleFunc(funcNameInfolist, infoListFunc)
 	ch.HandleFunc(funcNameResponselist, responseListFunc)
 
@@ -175,6 +177,23 @@ func hostListFunc(arguments interface{}) (reply interface{}, err error) {
 	m["HostList"] = slice
 
 	return m, nil
+}
+
+/// 设置默认目标主机
+func setDefaultTargetHostFunc(arguments interface{}) (reply interface{}, err error) {
+	log.Println("setDefaultTargetHostFunc()")
+
+	// 参数
+	m := arguments.(map[interface{}]interface{})
+	// 目标主机
+	targetHost, ok := m["targetHost"].(string)
+	if !ok {
+		log.Println("ERROR: [targetHost]")
+	}
+
+	v := mockservice.SetDefaultTargetHost(targetHost)
+
+	return v, nil
 }
 
 /// 获取模拟服务信息列表

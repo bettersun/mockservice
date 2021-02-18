@@ -207,6 +207,9 @@ func doProxyService(w http.ResponseWriter, r *http.Request, host string) {
 			logFieldError:      err,
 		}).Error(msg)
 		go Notify(msg)
+
+		// StatusCode
+		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
 	defer responseProxy.Body.Close()
@@ -522,6 +525,14 @@ func keyResponseHeader(url string, method string) string {
 /// 获取目标主机列表
 func ListHost() []string {
 	return hostSlice
+}
+
+/// 设置默认目标主机
+func SetDefaultTargetHost(targetHost string) bool {
+	defaultTargetHost = targetHost
+
+	logger.WithFields(logrus.Fields{"默认目标主机": targetHost}).Info("默认目标主机已改变")
+	return true
 }
 
 /// 获取模拟服务信息
